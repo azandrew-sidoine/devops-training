@@ -1,0 +1,118 @@
+# Docker Engine
+
+## Architechture
+
+- Daemon -> Process/server/Runtime responsible for creating and managing docker objects (volumes, images, networks & containers)
+- REST API -> Application programming interface sending instruction to docker daemon layer to manage objects.
+- Docker CLI -> Command line interface for using docker REST API to communicate with Docker daemon
+
+**Note** Docker versions consit of:
+    - version < 0.9.x (2013) Docker directly uses Linux LXC software
+    - version 0.9.x (2014)
+        - LXC -> Linux container software for that provides environment isolation using Linux CGroups & Namespaces
+            - Daemon -> Libcontainer -> LXC
+
+**Note** `OpenContainer` is the organization that from 2014, start regulating containerization technologies
+         by defining specification for container's runtime & and images.
+    - version 1.11 (2016)
+        	From OCI specification docker daemon/runtime was moduled in small reusable components which runs on
+            top of libcontainer software.
+            `runC` -> In this version docker release the first version of `RunC (Run Container)` that is made open source
+            for the OCI community.
+
+            `containerd` -> Is the layer in the docker architecture that manages containers
+
+            `containerd-shim` -> is the layer of the architecture that runs containers whenever the the layer 
+                              that manages containers `containerd` is down.
+                              It makes containers daemonless, which allow the container to be detach from containerd 
+                              whenever it goes down & attached back whenever the daemon is back to live.
+
+## Service configuration
+
+- dockerd
+
+Dockerd is the service that starts docker daemon or docker engine. By default it listen on
+a linux socket at `/var/run/docker.sock` for connection, which prevent docker daemon from receiving
+requests from outside the host machine.
+
+> dockerd --debug
+
+To listen on TCP connection:
+
+> dockerd --host=tcp://<SERVER_IP>:<DOCKER_PORT:-2375>
+
+**Note** If allowing TCP connection, one must take security in consideration.
+
+To start the server to listen for encrypted connection on can provide tls configurations:
+
+> dockerd --host=tcp://<SERVER>:2376 --tls=true --tlscert=<PATH/TO/key.pem> --tlskey=<PATH/TO/serverkey.pem>
+
+**Note** To access docker running on a remote host from a client machine, we must configure DOCKER_HOST variable:
+
+> export DOCKER_HOST="tcp://<SERVER>:<PORT>"
+
+**Note** We can use json configuration to start docker daemon:
+
+````json
+// /etc/docker/daemon.json
+{
+    "debug": true,
+    hosts: ["tcp://<SERVER>:<PORT>"], // Can support multiple host
+    tls: true,
+    tlscert: ".../server.pem",
+    tlskey: ".../serverkey.pem",
+    "live-restore": true/false // Run container in background even if the daemon crashes or stop
+}
+```
+
+## Unknown docker cli Command
+
+> docker container rename <OLD_NAME> <NEW_NAME>         # Rename a created/started container
+> docker container stats                                # Output container network, disk, memory and processor usage
+> docker container top  <CONTAINER_NAME>                # List container processes with resources being used
+> docker container logs [-f] <CONTAINER_NAME>           # Ouput container logs and allows to stream the logs
+> docker system events --since <NUMBER_OF_MINUTES>m     # Logs system events from the specified n of minutes
+> docker container pause <CONTAINER_NAME>               # Pause a running container by sending CGroup freezer command
+> docker container unpause <CONTAINER_NAME>             # Send a command to resume the process being run by the container
+> docker container stop $(docker container ls -q)       # Stop all containers id returned by (docker container ls -q)
+> docker system df                                      # Show a disk usage on the system by docker object
+> docker image rm <Image>:tag                           # Remove image based on it name and tag
+> docker image prune -a                                 # Removes all unused images from the docker engine objects
+
+**Note** -q flag with the ls command will only return container ids
+> docker container rm $(docker container ls -aq)        # We use a to return the stopped containers
+
+**Note** When starting or running a container, docker provides us with `--hostname` flag that can be use to set the container
+        hostname.
+> docker [run|create] -d --hostname=myHost <IMAGE>
+
+**Note** Setting restart policy of a container
+
+> docker [run|create] --restart="no[Never restart]|unless-stopped[Restart container only]|on-failure[Restart the container when it fails]|always" -d <IMAGE>
+
+> docker container cp <HOST_PATH> <CONTAINER>:/<CONTAINER_PATH>     # Copying files from host to container or from container to host
+> docker container cp <CONTAINER>:/<CONTAINER_PATH> /<HOST>         # Copies from container to host
+
+**Note** When configuring port mapping we can restrict ip address (network card) on which port are exposed:
+
+> docker [run|create] -p <MyIpAddress>:<HostPort>:<ContainerPort> <Image>
+
+**Note** Sometimes we wish to let docker select the port on which application is served, to do so, we can omit the host port:
+
+> docker [run|create] -p <ContainerPort> <Image>
+
+**Note** To bind a host port to any of the exposed container port:
+
+> docker [run|create] -P --exposed=<ContainerPort> <Image>
+
+**Note** Docker uses Linux IPTables rules to forward traffic to container. To list rules on docker chain:
+
+> sudo iptables -t nat -s DOCKER
+
+## Docker Logging
+
+To specify logging driver when creating a container:
+
+> docker [run|create] --log-driver=<LOGGING_DRIVER> -d <IMAGE>
+
+**Note** Logging driver can be configured globally in `/etc/docker/daemon.json` for all containers.

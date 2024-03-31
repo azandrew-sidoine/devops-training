@@ -1,0 +1,96 @@
+# Docker Image Management
+
+Docker provides a public/default registry where users and companies can publish their builded
+images to.
+However one can deploy it cutom registry where it images are located.
+
+To search for docker images(verified, published by users, etc...), we can go to docker hub which
+is the default docker images registry.
+
+Alternatively, docker cli provides command to search images from terminal as follow:
+
+> docker search [--filter stars=n is-official=<bool>] [--limit n] <IMAGE>
+
+Once an image is found, and one needs to download the image, simply do:
+
+> docker pull <IMAGE>
+> docker pull <REGISTRY>/<Repository>/<ImageName>
+
+An example will be:
+
+> docker pull grc.io/httpd/httpd # Where grc.io is the google cloud registry
+
+## Authenticating with registries
+
+> docker login -u <Username> -p
+> docker login <Username>
+
+## Creating a soft link to an image
+
+> docker image tag <Image>:tag <Image2>:tag
+
+## Inspecting docker images
+
+> docker image history <ImageName>                      # Shows the dockerfile directives used in building the image
+> docker image inspect <ImageName> -f '{{.Os}}'         # Uses json path search to query for value of Os property
+
+# Creating tarball from docker image
+
+> docker image save <Image>[:tag] -o <Path/To/Tarball.tar>
+
+To load an image from the created tarball:
+
+> docker image load -i <Path/To/Tarball.tar> # This will 
+
+To create an image from an existing container:
+
+> docker export <ContainerName> > <Path/To/Tarball.tar> # Create a tarball from a docker container
+
+To load the tarball into an image:
+
+> docker image import <Path/To/Tarball.tar> <ImageName>[:tag]
+
+## Using docker commit to create image from container state
+
+> docker container commit [-a <Author>] [-c <DockerFileForAdditionalInstruction>] [-m <Commit Message>] <ContainerName> <NewImageName> # Create an image from existing container
+
+**Note** This approach is not a recommended approach, one should use the `Dockerfile` to build an image.
+
+
+## Best practices
+
+- Cache busting
+
+It's a technique in which package update and install instruction are concatenated in a single instruction
+using `&` symbol, so that docker always update packages repository before installing them.
+Them allow the image to always have use up to date version of packages.
+
+- Copy VS ADD
+
+It's recommended to use `copy` when copying file from host to container.
+
+**Note** ADD will download files when url is specified, extract tarball content to container if 
+         tarball is provided.
+
+> COPY [--from=<IMAGE>] <SOURCE> <DESTINATION>
+
+## BASH vs Entrypoint
+
+Entrypoint instruction is like command instruction, but with ability to accept argument when the container
+runner is invoked.
+
+In case of CMD, the default command is replace by the argument to the run script.
+
+## Base vs Parent Image
+
+In docker hierarchy, one can have only on on base image which is build from `scratch (which is the nothing)` 
+but can have one or multiple parent in the hierarchy.
+
+**Note** `scratch` is the docker minimum image from which image must be built.
+
+
+## Useful commands
+
+> docker image ps       # List image on a docker host
+> docker ls --no-trunc  # List images on a docker host without triming image id
+> docker list           # List images on a docker host
