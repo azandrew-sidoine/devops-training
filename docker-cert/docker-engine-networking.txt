@@ -1,0 +1,46 @@
+# Docker Engine Networking
+
+Docker by default comes with 3 network drivers (bridge (Virtual private network), none (Not attached to any network) and host (no isolation)).
+
+**Note**
+The overlay network driver creates a distributed network among multiple Docker daemon hosts. It's used to create communication layer among docker swarm services.
+
+What a network driver:
+
+Network drivers are abstractions by which docker encapsulates, communication within
+containers and within containers and host network or outside devices.
+
+To define the network driver for a docker container, use `--network`:
+
+> docker create (--network|--net)=<bridge|none|host> --name=<NAME> <Image>
+
+
+## Creating a docker network
+
+> docker network create --driver=<bridge|none|host> --subnet=<x.x.x.x/(0-24)> <NETWORK_NAME>
+
+## Built-in DNS
+
+Docker provides a built-in DNS that allows containers to locate each other on the network using
+`container name`. Docker internal DNS runs on `127.0.0.11` on the host machine.
+
+**Note** Docker uses Network namespaces to create virtual network on which container can communicate.
+
+
+## Network commands
+
+> docker network ls|list # List docker networks
+
+> docker network inspect <NETWORK> # Print network metadata and containers attached
+
+> docker network connect <NETWORK> <CONTAINER> # Connect a container to a network
+
+> docker network connect <NETWORK> <CONTAINER> # Disconnect a container from a network
+
+> docker network rm|remove <NETWORK> # Remove a specific network from docker engine
+
+> docker network prune # Remove unused network from the docker engine
+
+
+**Note** In order to create network isolation and network traffic through communication,
+         docker uses linux utilities like `ip` (network manager), `netns` (network namespace), and `iptables` (Firewall and traffic routing).

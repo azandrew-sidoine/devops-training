@@ -1,0 +1,75 @@
+# Docker engine security
+
+**Note** Docker uses kernel capabilities to restrict access to raw socket access for containers.
+
+         By default, each docker container has `1024` CPU shares.
+
+## Best practices
+
+- Disable password based authentication
+- Enable ssh key based authentication
+- Determine users who needs access to server
+
+- When exposing docker to outside, only allow from withing the company private network
+- When exposing docker daemon outside, use a SSL connexion with SSL cert
+    **Note** Check docker document for SSL configuration
+
+
+## Namespace & Capabilities
+
+Docker uses namespaces to isolates network, processes, workspaces, IPC (inter process communication)
+and mount point.
+
+**Note** By default, docker run container using a root user. To override default behavior, use `USER <USERNAME>`
+in your `Dockerfile`
+
+**Note** Root user within the container is not the same root user on the docker host system, it's only
+         root on the container, otherwise it will have the capability to shutdown the host system, etc...
+
+## CGroups
+
+They are technology that handles management of system resources like RAM, Processor and Network etc.
+Docker uses cGroups to limit resources used by container on a host system.
+
+- Limiting CPU usage
+
+> Complexity Fair Scheduler     -> Default Linux scheduler (Provides processes with equals amount of CPU resources)
+> Realtime Scheduler            -> Use by docker version >= 1.1.30
+
+> docker container run --cpu-shares=512 <Image>                             # Tells the container the available CPU resource to share
+> docker container run --cpuset-cpus=<StartIndex>-<EndIndex> <Image>        # Tells the running container to use only the CPU labelled 0 and 1
+> docker container run --cpu-count=<Percentage> <Image>                     # Tell container to use the restricted percent specified
+
+- Limiting Memory
+
+-- Recall
+
+Linux OS uses Swap space, which is a reserved disk space as Random Access Memory whenever the system physical RAM runs out.
+
+OOM (Out Of Memory) -> It's an exception thrown whenever OS runs out of memory space.
+
+**Note** Docker container runs wihtout memory limit on the OS and will use as much as available memory space on the host machine.
+         In order to restrict the container, we use the `--memory` flag to specified the memory limit used by the container, when
+         creating or running it:
+
+> docker container run --memory=<SIZE>(k|m|g) --name=<NAME> <IMAGE>
+> docker create run --memory=<SIZE>(k|m|g) --name=<NAME> <IMAGE>
+
+**Note** k -> Kilobytes, m -> Megabytes, g -> Gigabytes
+
+**Note** Docker also allow to specify the swap space used by the container using the `--memory-swap`
+         option. `--memory-swap` option must be used in conjonction with `--memory` option:
+
+> docker run|create run --memory=<SIZE>(k|m|g) --memory-swap=<SIZE>(k|m|g) --name=<NAME> <IMAGE>
+
+**Warning** value specified for `--memory-swap` option is the addition of the memory and the swap space:
+            container_swap_space = memory-flag - memory-swap-flag
+
+Given the warning, running a container with the configuration below create a 256mb of swap space:
+
+> docker create --memory=512m --memory-swap=768 --name=mariadb mariadb:latest
+
+**Note** Docker allow to set the minimum reserved memory for a container making container's
+         memory sit between [reserved, memory]
+
+> docker create --memory=512m --memory-reservation=128m --memory-swap=768 --name=mariadb mariadb:latest

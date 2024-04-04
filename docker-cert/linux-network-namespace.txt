@@ -1,0 +1,90 @@
+# Linux network Linux
+
+Linux Network Namespaces allwo to create multiple isolated networking environment running on a single physical host or VM.
+
+In the configuration, each network space has it owns network interfaces, routing table and forwarding rules.
+
+Processes can be dedicated to a given network space on Linux machines.
+
+- Root namespace
+
+It's the default network environment for a Linux host.
+
+## Managing network spaces
+
+Network spaces are objects of the `ip` utility command for managing virtual/logical network environments.
+
+> ip [OPTIONS] netns [COMMAND]
+
+- Adding network space
+
+> ip netns add <NAME> # Add a network space
+
+**Note** Create network spaces are located in the `/var/run/netns` directory.
+
+**Note** Each created network space is isolated from other network space and from the `root network space`.
+
+> ip netns # Print or list available network spaces
+
+- Deleting a network space
+
+> ip netns del <NAME>
+
+
+- Executing network command in network spaces
+
+Linux `ip netns`tool allow it users to execute network command in isolated network spaces.
+
+> ip netns exec <NAME> [COMMAND]
+
+
+**Example**
+
+```sh
+> ip netns add my-net
+> ip netns exec my-net ip link show
+```
+
+- Creating network virtual switches
+
+**Note** To allow network namespaces to communicate and send traffics to one another, we can create virtual switch using linux bridge tool or `Open VSwitch` tool at [https://docs.openvswitch.org].
+
+For Open VSwitch, after installing software, one can create network bridge as follow:
+
+> ovs-vsctl addr-br <BRIDGE_NAME> # Add a bridge switch to the host machine. This add an interface <BRIDGE_NAME> to the host machine.
+
+> ovs-vsctl show # Print list of available network bridge/virtual switch available
+
+- V-Peer
+
+V-Peer are pipe that allow traffic or frames to flow from an interface to another network namespace.
+
+To add a V-Peer to a linux host:
+
+> ip link add <NETWORK_NAME_SPACE_PIPE_NAME> type veth peer name <NETWORK_SWITCH_PIPE_NAME> # Creates a virtual pipe that will allow communication
+
+
+**Note** The above command only create the 2 endpoints of the virtual pipe for communication and does not attach it to anything.
+
+To attach a pipe to a network namespace:
+
+> ip link set <NETWORK_NAME_SPACE_PIPE_NAME> netns <NETWORK_NAMESPACE>
+
+To connect to an ovs switch:
+
+> ovs-vsctl add-port <NetworkInterface> <NETWORK_SWITCH_PIPE_NAME>
+
+**Example**
+
+```sh
+ip netns add my-net
+
+ip link add eth0-ns1 type veth peer name veth-ns1
+
+# Add pipe to a network space
+ip link set eth0-ns1 netns my-net
+```
+
+**Note** To bring a network interface up:
+
+> ip link set dev <NetworkInterface> up

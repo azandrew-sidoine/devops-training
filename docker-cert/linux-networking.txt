@@ -1,0 +1,65 @@
+# Linux Networking
+
+**Note** Linux Kernel (Core system) handles Layer2, Layer3, Layer4 of the OSI model.
+
+**Note** In Linux networking, if a given network namespace does not have a default gateway,
+         one will not be able to connect to anything.
+
+## Ip (layer 2 (Data Link) of OSI model)
+
+**Note** List of possible options are:
+
+- br         # Print a brief Layer2, and Layer3 information about NIC.
+- c          # Add color to hightlighed information
+- j [-p]     # Output network interface information in json format. `-p` for prettifying.
+- online|o   # Online output
+- 4          # Return ip version 4 addresses
+- 6          # Return ip version 6 addresses
+
+--- Layer 2 (Data Link) is the connection between wire and NIC.
+--- MAC (Physical address) - Static Hexadecimal value built into device that is manufacturer dependent
+
+It's part of the `iproute2` package which is a collection of utilities
+for controlling `TCP/IP` networking and traffic control.
+
+`ip` command replace deprecated networking tools like `ifconfig`, `route`,
+`arp` etc...
+
+> man ip [| less ] # show manual page of the ip utility command
+
+> ip link|l [show] # show network interfaces on a linux host
+
+### Address object (Network layer & Data Link Layer)
+
+`addr` object allow users to display layer 2 and layer 3 (ipv4, ipv6, etc...) information
+of linux network interfaces.
+
+> ip addr|address [show]
+
+**Note** `inet` stand for internet address or ip adress of the network interface.
+
+> ip addr add <CIDR_ADDRESS> [dev <NetworkInterface>]
+
+```sh
+ip addr add 10.0.01/24 dev eth0
+```
+
+> ip addr del <CIDR_ADDRESS> [dev <NetworkInterface>] # Delete network ip address
+
+
+> ip -br -c addr show
+> ip -o addr | awk '{print $4}'  # Show ip address that is the 4th element in oneline output
+
+## Route
+
+Show ip routing information (like gateway, device, metric, etc) to other network interface.
+
+> ip [OPTIONS] r|route # Display routing information
+
+> ip r|route delete <GATEWAY_OR_ROUTING_TABLE_NAME> # Delete a routing gateway for a given network namespace
+
+> ip [OPTIONS] r|route add [<GATEWAY_OR_ROUTING_TABLE_NAME>] <IP_ADDR_OR_GATEWAY> [dev <NETWORK_DEVICE_INTERFACE>]
+    # Add a network gateway in a given network namespace. `dev` object is used to specify the network device
+    # on which gateway is added
+
+> ip route add default 192.168.12.1 dev en0 # Add a default gateway to en0 interface

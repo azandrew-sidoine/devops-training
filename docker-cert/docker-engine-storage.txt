@@ -1,0 +1,27 @@
+# Docker engine storage
+
+Docker storge provides object like storage drivers and volume drivers
+that allow devops to persist state of service running inside a container.
+
+**Note** By default docker are mount on a container in a read-write mode.
+
+> docker container create --mount "source=/path/on/host,destination=path/on/container" --name <NAME> <IMAGE>
+
+To mount a volume in read only mode:
+
+> docker container create --mount "source=/path/on/host,destination=path/on/container,readonly" --name <NAME> <IMAGE>
+
+
+## Commands
+
+> docker volume inspect <VOLUME> # Display information about a volume
+
+> docker volume remove|rm <VOLUME> # Remove a docker volume
+
+> docker volume prune # Remove unused docker volume
+
+> docker volume create <NAME> # Create a volume on docker host
+
+> docker container create (--volume|-v) <Volume>:<Destination>[:ro] ... # Deprecated mount volume on docker container
+
+> docker container create --mount="[type=bind|mount,]source=<Volume>,(destination|target)=<Destination/Path>,[readonly|ro]" ... # New way to mount volume on docker
